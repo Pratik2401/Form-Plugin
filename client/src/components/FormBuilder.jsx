@@ -2,7 +2,9 @@
 import { useState } from 'react';
 import { createForm } from '../api/formApi';
 import { Card, Form, Button, Row, Col, ListGroup, InputGroup, Alert, Badge, Modal } from 'react-bootstrap';
-import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
+import { DndContext, closestCenter } from '@dnd-kit/core';
+import { arrayMove, SortableContext, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 const inputTypes = [
   { label: 'Text', value: 'text', icon: 'type' },
@@ -16,6 +18,64 @@ const inputTypes = [
   { label: 'Radio', value: 'radio', icon: 'record-circle' },
   { label: 'File', value: 'file', icon: 'file-earmark' },
 ];
+
+function SortableField({ id, index, field, editField, removeField, inputTypes }) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+    background: '#f8f9fa',
+    borderRadius: 8,
+    marginBottom: 8,
+    position: 'relative',
+    borderLeft: '3px solid #0d6efd',
+    paddingLeft: 25,
+    padding: 16,
+  };
+  return (
+    <div ref={setNodeRef} style={style} {...attributes}>
+      <div className="d-flex justify-content-between align-items-center">
+        <div>
+          <h6 className="mb-1">
+            {field.label}
+            {field.required && <span className="text-danger ms-1">*</span>}
+          </h6>
+          <div>
+            <Badge bg="secondary" className="me-2">
+              <i className={`bi bi-${inputTypes.find(t => t.value === field.type)?.icon || 'type'} me-1`}></i>
+              {inputTypes.find(t => t.value === field.type)?.label || field.type}
+            </Badge>
+            {field.placeholder && (
+              <small className="text-muted">Placeholder: {field.placeholder}</small>
+            )}
+          </div>
+        </div>
+        <div>
+          <Button 
+            variant="link" 
+            size="sm" 
+            className="text-primary"
+            onClick={() => editField(index)}
+          >
+            <i className="bi bi-pencil"></i>
+          </Button>
+          <Button 
+            variant="link" 
+            size="sm" 
+            className="text-danger"
+            onClick={() => removeField(index)}
+          >
+            <i className="bi bi-trash"></i>
+          </Button>
+        </div>
+      </div>
+      <div className="drag-handle position-absolute top-50 start-0 translate-middle-y" {...listeners}>
+        <i className="bi bi-grip-vertical text-muted"></i>
+      </div>
+    </div>
+  );
+}
 
 export default function FormBuilder({ onFormCreated }) {
   const [fields, setFields] = useState([]);
@@ -74,14 +134,13 @@ export default function FormBuilder({ onFormCreated }) {
     setFields(updatedFields);
   };
 
-  const handleDragEnd = (result) => {
-    if (!result.destination) return;
-    
-    const items = Array.from(fields);
-    const [reorderedItem] = items.splice(result.source.index, 1);
-    items.splice(result.destination.index, 0, reorderedItem);
-    
-    setFields(items);
+  const handleDragEnd = (event) => {
+    const { active, over } = event;
+    if (active.id !== over?.id) {
+      const oldIndex = fields.findIndex((_, idx) => `field-${idx}` === active.id);
+      const newIndex = fields.findIndex((_, idx) => `field-${idx}` === over.id);
+      setFields((fields) => arrayMove(fields, oldIndex, newIndex));
+    }
   };
 
   const addOption = () => {
@@ -396,70 +455,24 @@ export default function FormBuilder({ onFormCreated }) {
                   <p className="mt-3 mb-0 text-muted">No fields added yet. Click "Add Field" to start building your form.</p>
                 </div>
               ) : (
-                <DragDropContext onDragEnd={handleDragEnd}>
-                  <Droppable droppableId="fields">
-                    {(provided) => (
-                      <div
-                        {...provided.droppableProps}
-                        ref={provided.innerRef}
-                        className="fields-list"
-                      >
-                        {fields.map((field, index) => (
-                          <Draggable key={index} draggableId={`field-${index}`} index={index}>
-                            {(provided) => (
-                              <div
-                                ref={provided.innerRef}
-                                {...provided.draggableProps}
-                                {...provided.dragHandleProps}
-                                className="field-item bg-light p-3 rounded mb-2 position-relative"
-                              >
-                                <div className="d-flex justify-content-between align-items-center">
-                                  <div>
-                                    <h6 className="mb-1">
-                                      {field.label}
-                                      {field.required && <span className="text-danger ms-1">*</span>}
-                                    </h6>
-                                    <div>
-                                      <Badge bg="secondary" className="me-2">
-                                        <i className={`bi bi-${inputTypes.find(t => t.value === field.type)?.icon || 'type'} me-1`}></i>
-                                        {inputTypes.find(t => t.value === field.type)?.label || field.type}
-                                      </Badge>
-                                      {field.placeholder && (
-                                        <small className="text-muted">Placeholder: {field.placeholder}</small>
-                                      )}
-                                    </div>
-                                  </div>
-                                  <div>
-                                    <Button 
-                                      variant="link" 
-                                      size="sm" 
-                                      className="text-primary"
-                                      onClick={() => editField(index)}
-                                    >
-                                      <i className="bi bi-pencil"></i>
-                                    </Button>
-                                    <Button 
-                                      variant="link" 
-                                      size="sm" 
-                                      className="text-danger"
-                                      onClick={() => removeField(index)}
-                                    >
-                                      <i className="bi bi-trash"></i>
-                                    </Button>
-                                  </div>
-                                </div>
-                                <div className="drag-handle position-absolute top-50 start-0 translate-middle-y">
-                                  <i className="bi bi-grip-vertical text-muted"></i>
-                                </div>
-                              </div>
-                            )}
-                          </Draggable>
-                        ))}
-                        {provided.placeholder}
-                      </div>
-                    )}
-                  </Droppable>
-                </DragDropContext>
+                <DndContext collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+                  <SortableContext
+                    items={fields.map((_, idx) => `field-${idx}`)}
+                    strategy={verticalListSortingStrategy}
+                  >
+                    {fields.map((field, index) => (
+                      <SortableField
+                        key={index}
+                        id={`field-${index}`}
+                        index={index}
+                        field={field}
+                        editField={editField}
+                        removeField={removeField}
+                        inputTypes={inputTypes}
+                      />
+                    ))}
+                  </SortableContext>
+                </DndContext>
               )}
             </div>
             
@@ -488,7 +501,7 @@ export default function FormBuilder({ onFormCreated }) {
       <FieldModal />
       <FormPreview />
       
-      <style jsx>{`
+      <style>{`
         .field-item {
           border-left: 3px solid #0d6efd;
           padding-left: 25px !important;

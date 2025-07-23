@@ -6,7 +6,7 @@ import FormSubmit from './components/FormSubmit';
 import Submissions from './components/Submissions';
 import Login from './components/Login';
 import AdminDashboard from './components/AdminDashboard';
-import { Container, Navbar, Nav, Button } from 'react-bootstrap';
+import { Container, Navbar, Nav, Button, Row, Col, Spinner } from 'react-bootstrap';
 import { AuthProvider, useAuth } from './context/AuthContext';
 
 function AppNavbar() {
