@@ -1,0 +1,46 @@
+#root {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 1rem;
+}
+
+/* Custom styling for the app */
+.app-container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.content-container {
+  flex: 1;
+}
+
+/* Custom footer styling */
+.app-footer {
+  margin-top: 2rem;
+  padding: 1.5rem 0;
+  background-color: #f8f9fa;
+  border-top: 1px solid rgba(0, 0, 0, 0.05);
+  text-align: center;
+  color: #6c757d;
+}
+
+/* Custom card animations */
+.card {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.08) !important;
+}
+
+/* Custom button animations */
+.btn {
+  transition: all 0.2s ease;
+}
+
+/* Custom form field animations */
+.form-control, .form-select {
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
